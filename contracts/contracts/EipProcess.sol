@@ -5,6 +5,7 @@ contract EipProcess {
 
     string public eipBaseUrl;
 
+    // TODO: just use a monotonically increasing counter for each, no need to store the indexes
     uint8[] public statusCodes;
     uint8[] public categoryCodes;
     // encoded names
@@ -18,7 +19,7 @@ contract EipProcess {
     mapping(uint16 => Editor) public editors;
     mapping(address => uint16) public editorCodes;
     // categoryCode => editorCodes
-    mapping(uint16 => uint16[]) freeEditors;
+    mapping(uint16 => uint16[]) public freeEditors;
 
     uint32 public eipCounter;
     mapping(uint32 => EIP) public eips;
@@ -170,6 +171,36 @@ contract EipProcess {
         // only currentEditor or at least 2 editors (signatures)
     }
 
+    function getEipUrl(string memory eipCode) view public returns(string memory url) {
+        return string(abi.encodePacked(eipBaseUrl, eipCode));
+    }
+
+    function getStatuses() view public returns(string[] memory statuses) {
+        statuses = new string[](statusCodes.length);
+        for(uint8 i = 0; i < statusCodes.length; i++) {
+            statuses[i] = statusNames[statusCodes[i]];
+        }
+    }
+
+    function getCategories() view public returns(string[] memory categories) {
+        categories = new string[](categoryCodes.length);
+        for(uint8 i = 0; i < categoryCodes.length; i++) {
+            categories[i] = categoryNames[categoryCodes[i]];
+        }
+    }
+
+    function getEditor(uint16 editorCode) view public returns(Editor memory editor) {
+        return editors[editorCode];
+    }
+
+    function getFreeEditors (uint16 categoryCode) view public returns(uint16[] memory freeEditorsCateg) {
+        return freeEditors[categoryCode];
+    }
+
+    function random(uint16 max) public view returns (uint16) {
+        return uint16(uint256(keccak256(abi.encodePacked( block.timestamp, block.difficulty)))%max);
+    }
+
     function changeEditorsPrivate(EditorInit[] memory addedEditors, address[] memory removedEditors) private {
         // Add editors
         for (uint8 i = 0; i < addedEditors.length; i++) {
@@ -223,13 +254,4 @@ contract EipProcess {
             freeEditors[categories[i]].push(editorCode);
         }
     }
-
-    function getUrl(uint32 eipCode) view public returns(string memory url) {
-        return string(abi.encodePacked(eipBaseUrl, eipCode));
-    }
-
-    function random(uint16 max) public view returns (uint16) {
-        return uint16(uint256(keccak256(abi.encodePacked( block.timestamp, block.difficulty)))%max);
-    }
-
 }
